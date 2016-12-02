@@ -1,0 +1,457 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Carousel Template for Bootstrap</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="http://cdn.bootcss.com/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="http://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+    <style type="text/css">
+        .expander {
+          width: 250px;
+        }
+
+        .expander>.ex-title {
+          background-color:white;
+          color: #333;
+          cursor: pointer;
+        }
+        p{margin: 0;}
+        
+    </style>
+  <body ng-app='foodModule'>
+<!-- NAVBAR
+================================================== -->
+ 
+	<ui-view></ui-view>
+
+ 	
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <!-- <script src="js/docs.min.js"></script> -->
+    <script type="text/javascript" src='js/angular.js'></script>
+    <script type="text/javascript" src='js/angular-ui-router.js'></script>
+    <script type="text/javascript" src='js/angular-sanitize.js'></script>
+    <script type="text/javascript">
+    	var foodApp=angular.module('foodModule',['ui.router','ngSanitize'])
+        .filter('trustHtml', function ($sce) {
+             return function (input) {
+                return $sce.trustAsHtml(input);
+             }
+          })
+        .run(function($rootScope){
+            $rootScope.globaVar={
+                foodCategories:'http://10.30.154.40/food-categories.php',
+                foodList:"http://10.30.154.40/food-list.php",
+                prefixImage:'http://tnfs.tngou.net/image',
+                foodDetail:'http://10.30.154.40/food-detail.php',
+                // 详细资料数据请求接口
+                diseaseDetail:"http://10.30.154.40/disease-detail.php",
+                // 科室列表数据请求接口
+                diseaseDepartmentList:"http://10.30.154.40/disease-department-list.php",
+                // 身体列表数据请求接口
+                diseasePlaceListUrl:'http://10.30.154.40/disease-place-list.php',
+                // 身体分类数据请求接口
+                diseasePclassifyCategories:'http://10.30.154.40/disease-pclassify-categories.php',
+                // 科室分类数据请求接口
+                diseaseDclassify:'http://10.30.154.40/disease-dclassify-categories.php'
+            }
+        })
+    	.config(function($stateProvider,$urlMatcherFactoryProvider,$urlRouterProvider){
+    		$urlMatcherFactoryProvider.caseInsensitive(true);
+    		$urlRouterProvider.otherwise('/navbar/home');
+    		$stateProvider
+    		.state('navbar',{
+    			url:"/navbar",
+    			templateUrl:"template/navbar.html",
+    			controller:"navbarController",
+                 resolve:{
+                        employeesList:function($http,$rootScope){
+                            return  $http({
+                                url:$rootScope.globaVar.foodCategories
+                            }).then(function(res){
+                                return res.data.tngou;
+                            })
+                        }
+                    }
+    		})
+    		.state('navbar.home',{
+    			url:"/home",
+    			templateUrl:"template/home.html",
+    			controller:"homeController",
+                resolve:{
+                    diseaseshome:function($http,$stateParams,$rootScope){
+                        return $http({
+                            url:$rootScope.globaVar.diseaseDepartmentList,
+                            params:{
+                                id:"2",
+                                page:"1",
+                                rows:"6"
+                            }
+                        }).then(function(res){
+                            return res.data.list;
+                        })
+                    }
+                }
+    		})
+
+            .state('navbar.foodList',{
+                url:'/foodList/:id/:page',
+                templateUrl:'template/foodList.html',
+                controller:'foodListController',
+                resolve:{
+                    foodList:function($http,$stateParams,$rootScope){
+                        return $http({
+                            url:$rootScope.globaVar.foodList,
+                            params:{
+                                id:$stateParams.id,
+                                page:$stateParams.page
+                            }
+                        }).then(function(res){
+                            return res.data;
+                        })
+                    }
+                }
+            })
+             .state('navbar.foodDetail',{
+                url:'/foodDetail/:id',
+                templateUrl:'template/foodDetail.html',
+                controller:'foodDetailController',
+                resolve:{
+                    foodDetail:function($http,$stateParams,$rootScope){
+                            console.log($stateParams.id)
+                        return $http({
+                            url:$rootScope.globaVar.foodDetail,
+                            params:{
+                                id:$stateParams.id
+                            }
+                        }).then(function(res){ 
+
+                            return res.data;
+
+                        })
+                    }
+                }
+            })
+               /*疾病信息开始*/
+            .state('navbar.diseaseparent.diseaseDetail',{
+                url:'/diseaseDetail/:id',
+                views: {
+                    "detail": {
+                        templateUrl:'template/diseaseDetail.html',
+                        controller:'diseaseDetailController',
+                        resolve:{
+                            diseaseDetail:function($http,$stateParams,$rootScope){
+                                return $http({
+                                    url:$rootScope.globaVar.diseaseDetail,  //这里的globalVar需要修改
+                                    params:{
+                                        id:$stateParams.id
+                                    }
+                                }).then(function(res){
+                                    console.log(res.data);
+                                    return res.data;
+                                })
+                            }
+                        }
+                        
+                    }
+                }
+            })
+              /*疾病信息结束*/
+
+
+           //多view主体
+            .state("navbar.diseaseparent",{
+                url:"/diseaseparent",
+                templateUrl:'template/diseaseparent.html',
+            })
+            .state("navbar.diseaseparent.classes",{
+                url:"/classes",
+                views:{
+                    "classes1":{
+                        templateUrl:'/template/diseaseDclassifyCategories.html',
+                        controller:'diseaseDclassifyCategoriesController',
+                        resolve:{
+                            'diseaseDclassifyCategories':function($http,$rootScope){
+                                    return $http({
+                                        url:$rootScope.globaVar.diseaseDclassify
+                                    }).then(function(res){
+                                        return res.data.tngou;
+                                    })
+                            }
+                        }
+                    },
+                    "classes2":{
+                            templateUrl:'/template/diseasePclassifyCategories.html',
+                            controller:'diseasePclassifyCategoriesController',
+                            resolve:{
+                                diseasePclassifyCategories:function($http,$rootScope){
+                                    return $http({
+                                        url:$rootScope.globaVar.diseasePclassifyCategories
+                                    }).then(function(res){
+                                        return res.data;
+                                    })
+                                }
+                            }
+                    }
+            }
+            })
+             //身体列表
+           .state('navbar.diseaseparent.place',{
+            url:'/classes/place/:id/:page',
+            views:{
+                "lists":{
+                templateUrl:'template/diseasePlaceList.html',
+                controller:'diseaseplacelistController',
+                resolve:{
+                   diseaseplaceLists:function($http,$stateParams,$rootScope){
+                        return $http({
+                            url:$rootScope.globaVar.diseasePlaceListUrl,
+                            params:{
+                                 id:$stateParams.id,
+                                 page:$stateParams.page
+                            }
+                        }).then(function(res){
+                            console.log(res.data)
+                            return res.data
+                        })
+
+
+                   }
+                }
+            },
+            "classes1":{
+                        templateUrl:'/template/diseaseDclassifyCategories.html',
+                        controller:'diseaseDclassifyCategoriesController',
+                        resolve:{
+                            'diseaseDclassifyCategories':function($http,$rootScope){
+                                    return $http({
+                                        url:$rootScope.globaVar.diseaseDclassify
+                                    }).then(function(res){
+                                        return res.data.tngou;
+                                    })
+                            }
+                        }
+                    },
+                    "classes2":{
+                            templateUrl:'/template/diseasePclassifyCategories.html',
+                            controller:'diseasePclassifyCategoriesController',
+                            resolve:{
+                                diseasePclassifyCategories:function($http,$rootScope){
+                                    return $http({
+                                        url:$rootScope.globaVar.diseasePclassifyCategories
+                                    }).then(function(res){
+                                        console.log(res.data)
+                                        return res.data;
+                                    })
+                                }
+                            }
+                    }
+        }
+           }) 
+             //科室列表
+           .state('navbar.diseaseparent.classesList',{
+            url:'/classes/classesList/:id/:page',
+            views:{
+                "lists":{
+                    templateUrl:'template/diseaseDepartmentList.html',
+                    controller:'diseaseDepartmentListController',
+                    resolve:{
+                        diseaseDepartmentList:function($http,$stateParams,$rootScope){
+                            return $http({
+                                url:$rootScope.globaVar.diseaseDepartmentList,
+                                params:{
+                                    id:$stateParams.id,
+                                    page:$stateParams.page
+                                }
+                            }).then(function(res){
+                                return res.data;
+                            })
+                        }
+                    }
+                    
+                },
+                "classes1":{
+                        templateUrl:'/template/diseaseDclassifyCategories.html',
+                        controller:'diseaseDclassifyCategoriesController',
+                        resolve:{
+                            'diseaseDclassifyCategories':function($http,$rootScope){
+                                    return $http({
+                                        url:$rootScope.globaVar.diseaseDclassify
+                                    }).then(function(res){
+                                        return res.data.tngou;
+                                    })
+                            }
+                        }
+                    },
+                    "classes2":{
+                            templateUrl:'/template/diseasePclassifyCategories.html',
+                            controller:'diseasePclassifyCategoriesController',
+                            resolve:{
+                                diseasePclassifyCategories:function($http,$rootScope){
+                                    return $http({
+                                        url:$rootScope.globaVar.diseasePclassifyCategories
+                                    }).then(function(res){
+                                        return res.data;
+                                    })
+                                }
+                            }
+                    }
+            }
+           })
+
+        })
+        //疾病症状
+        .controller('diseaseDepartmentListController',function($scope,$stateParams, diseaseDepartmentList){
+                $scope.diseaseDepartmentList=diseaseDepartmentList.list;
+                $scope.total=diseaseDepartmentList.total;
+                var pageList=new Array;
+                for (var i = 1; i <= Math.ceil(diseaseDepartmentList.total/30); i++) {
+                    pageList.push(i);
+                }
+                $scope.pageList=pageList;
+                $scope.id=$stateParams.id;
+        })
+        
+        .controller("navbarController",function($scope,employeesList){
+             $scope.employees=employeesList;
+          
+        })
+        .controller("homeController",function($scope,diseaseshome){
+            console.log(diseaseshome);
+            $scope.diseases=diseaseshome;
+        })
+        .controller("foodListController",function($scope,foodList,$stateParams){
+
+            $scope.foodModule=foodList.tngou;
+
+            $scope.total = foodList.total;
+
+            pageList = [];
+
+            for (var i = 1; i <= Math.ceil(foodList.total/30); i++) {
+                pageList.push(i);
+            };
+
+            $scope.pageList = pageList;
+
+            $scope.id = $stateParams.id;
+
+        })
+        .controller("foodDetailController",function($scope,foodDetail){
+            
+            $scope.foodDetail=foodDetail;
+            console.log(foodDetail);
+        })
+        /*疾病信息*/
+        .controller("diseaseDetailController",function($scope,diseaseDetail,$stateParams){
+            $scope.diseaseDetail = diseaseDetail;
+        })
+
+
+        //身体列表
+        .controller("diseaseplacelistController",function($scope,diseaseplaceLists,$stateParams){
+           $scope.diseaseplaceLists=diseaseplaceLists.list;
+
+            $scope.total = diseaseplaceLists.total;
+            console.log($scope.total);
+            pageList = [];
+
+            for (var i = 1; i <= Math.ceil(diseaseplaceLists.total/30); i++) {
+                pageList.push(i);
+            };
+
+            $scope.pageList = pageList;
+
+            $scope.id = $stateParams.id;
+
+        })
+
+        /*身体分类*/
+        .controller("diseasePclassifyCategoriesController",function($scope,diseasePclassifyCategories){
+
+            $scope.bodyLists=diseasePclassifyCategories.tngou;
+        
+            $scope.showBlist=function(index){
+                console.log(this);
+            }
+
+        })
+
+        .controller('TestController', ['$rootScope', '$scope', function($rootScope,      $scope) {
+        }])
+
+        .directive('accordion', function() {
+          return {
+            restrict: 'EA',
+            replace: true,
+            transclude: true,
+            template: '<div ng-transclude></div>',
+            controller: function() {
+              var expanders = [];
+              this.gotOpened = function(selectedExpander) {
+                angular.forEach(expanders, function(expander) {
+                  if (selectedExpander != expander) {
+                    expander.showMe = false;
+                  }
+                });
+              };
+              this.addExpander = function(expander) {
+                expanders.push(expander);
+              };
+            }
+          };
+        })
+
+        .directive('expander', function() {
+          return {
+            restrict: 'EA',
+            replace: true,
+            transclude: true,
+            require: '^?accordion',
+            scope: {
+              expanderTitle: '='
+            },
+            template: '<div>' + '<div class="ex-title" ng-click="toggle()">{{expanderTitle}}</div>' + '<div class="ex-body" ng-show="showMe" ng-transclude></div>' + '</div>',
+            link: function(scope, iElement, iAttrs, accordionController) {
+              scope.showMe = false;
+              accordionController.addExpander(scope);
+              scope.toggle = function toggle() {
+                scope.showMe = !scope.showMe;
+                accordionController.gotOpened(scope);
+              };
+            }
+          };
+        })
+        //科室控制器开始
+        .controller('diseaseDclassifyCategoriesController',function($scope,diseaseDclassifyCategories){
+            $scope.dclassify=diseaseDclassifyCategories;
+           
+        })
+
+
+
+
+
+    </script>
+  </body>
+</html>
